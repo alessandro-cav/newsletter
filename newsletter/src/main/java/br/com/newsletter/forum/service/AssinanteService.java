@@ -21,12 +21,13 @@ public class AssinanteService {
 	}
 
 	public Assinante criarAssinatura(AssintanteRequest assintanteRequest) {
+		this.verificacaoDuplicidadeAssinante(assintanteRequest.getCpf(), assintanteRequest.getEmail());
 		Assinante assinante = AssintanteRequest.TransformaEmDto(assintanteRequest);
 		return this.assinanteRepository.save(assinante);
 	}
 
 	public AssinanteResponse cancelarAssinatura(CpfAndEmailRequest cpfAndEmailrequest) {
-		Optional<Assinante> assinanteOptional = this.findAssinanteByCpfAndEmail(cpfAndEmailrequest);
+		Optional<Assinante> assinanteOptional = this.validacaoCpfAndEmail(cpfAndEmailrequest);
 
 		if (assinanteOptional.get().getAtivo() == false) {
 			throw new AssinanteNotFoundException("Essa assinatura já esta cancelada");
@@ -39,7 +40,7 @@ public class AssinanteService {
 	}
 
 	public AssinanteResponse ativarAssinatura(CpfAndEmailRequest cpfAndEmailrequest) {
-		Optional<Assinante> assinanteOptional = this.findAssinanteByCpfAndEmail(cpfAndEmailrequest);
+		Optional<Assinante> assinanteOptional = this.validacaoCpfAndEmail(cpfAndEmailrequest);
 
 		if (assinanteOptional.get().getAtivo() == true) {
 			throw new AssinanteNotFoundException("Essa assinatura já esta ativada");
@@ -51,7 +52,7 @@ public class AssinanteService {
 		return assinanteResponse;
 	}
 
-	private Optional<Assinante> findAssinanteByCpfAndEmail(CpfAndEmailRequest cpfAndEmailrequest) {
+	private Optional<Assinante> validacaoCpfAndEmail(CpfAndEmailRequest cpfAndEmailrequest) {
 		Optional<Assinante> assinanteOptional = this.assinanteRepository.findByCpfAndEmail(cpfAndEmailrequest.getCpf(),
 				cpfAndEmailrequest.getEmail());
 		if (!assinanteOptional.isPresent()) {
@@ -61,5 +62,12 @@ public class AssinanteService {
 		return assinanteOptional;
 	}
 
+	private void verificacaoDuplicidadeAssinante(String cpf, String email) {
+		Optional<Assinante> assinanteOptional = this.assinanteRepository.findByCpfAndEmail(cpf, email);
+		if (!assinanteOptional.isPresent()) {
+			throw new AssinanteNotFoundException("Não foi possivel criar assinatura: cpf: " + cpf + " e email: " + email + "já estão sendo usando por outro assinante");
+		}
+
+	}
 }
 
